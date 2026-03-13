@@ -1,0 +1,108 @@
+const pool = require('../db');
+
+const getAllSpaces = async (req, res) => {
+  const { category } = req.query;
+  try {
+    let query = 'SELECT * FROM spaces WHERE is_active = true';
+    const params = [];
+
+    if (category) {
+      params.push(category);
+      query += ` AND category = $${params.length}`;
+    }
+
+    query += ' ORDER BY rating DESC';
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+const getSpaceById = async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM spaces WHERE id = $1', [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Space not found.' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+const createSpace = async (req, res) => {
+  const { title, category, area, description,
+          price_per_hr, image_url, has_seats } = req.body;
+
+  if (!title || !category || !price_per_hr) {
+    return res.status(400).json({ error: 'Title, category and price are required.' });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO spaces
+         (owner_id, title, category, area, description, price_per_hr, image_url, has_seats)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING *`,
+      [req.user.id, title, category, area, description,
+       price_per_hr, image_url, has_seats || false]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+const updateSpace = async (req, res) => {
+  const { price_per_hr, description, is_active } = req.body;
+  try {
+    const check = await pool.query(
+      'SELECT owner_id FROM spaces WHERE id = $1', [req.params.id]
+    );
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Not found.' });
+    if (check.rows[0].owner_id !== req.user.id)
+      return res.status(403).json({ error: 'Not your space.' });
+
+    const result = await pool.query(
+      `UPDATE spaces
+       SET price_per_hr = COALESCE($1, price_per_hr),
+           description  = COALESCE($2, description),
+           is_active    = COALESCE($3, is_active)
+       WHERE id = $4 RETURNING *`,
+      [price_per_hr, description, is_active, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+const deleteSpace = async (req, res) => {
+  try {
+    const check = await pool.query(
+      'SELECT owner_id FROM spaces WHERE id = $1', [req.params.id]
+    );
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Not found.' });
+    if (check.rows[0].owner_id !== req.user.id)
+      return res.status(403).json({ error: 'Not your space.' });
+
+    await pool.query(
+      'UPDATE spaces SET is_active = false WHERE id = $1', [req.params.id]
+    );
+    res.json({ message: 'Space deleted.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+module.exports = {
+  getAllSpaces, getSpaceById, createSpace, updateSpace, deleteSpace,
+};
