@@ -102,5 +102,25 @@ const getProfile = async (req, res) => {
     res.status(500).json({ error: 'Server error.' });
   }
 };
+const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    const result = await pool.query(
+      'SELECT * FROM users WHERE id = $1', [req.user.id]
+    );
+    const user = result.rows[0];
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect.' });
+    }
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await pool.query(
+      'UPDATE users SET password = $1 WHERE id = $2', [hashed, req.user.id]
+    );
+    res.json({ message: 'Password updated successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
 
-module.exports = { register, login, getProfile };
+module.exports = { register, login, getProfile ,changePassword };
