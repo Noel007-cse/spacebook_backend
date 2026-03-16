@@ -4,6 +4,7 @@ const {
   createBooking,
   getUserBookings,
   cancelBooking,
+  getBookingsForMySpaces, 
 } = require('../controllers/bookings.controller');
 const verifyToken = require('../middleware/auth.middleware');
 
