@@ -66,5 +66,24 @@ const cancelBooking = async (req, res) => {
     res.status(500).json({ error: 'Server error.' });
   }
 };
+const getBookingsForMySpaces = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT b.id, b.booking_date, b.time_slot, b.status, b.total_price,
+              s.title AS space_title, s.id AS space_id,
+              u.name AS user_name, u.email AS user_email
+       FROM bookings b
+       JOIN spaces s ON b.space_id = s.id
+       JOIN users u ON b.user_id = u.id
+       WHERE s.owner_id = $1
+       ORDER BY b.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
 
-module.exports = { createBooking, getUserBookings, cancelBooking };
+module.exports = { createBooking, getUserBookings, cancelBooking,getBookingsForMySpaces  };
