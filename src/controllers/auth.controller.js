@@ -123,4 +123,31 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile ,changePassword };
+const updateProfile =async(req,res) =>{
+  const{name} =req.body;
+
+  if(!name){
+    return res.status(400).json({eroor: "NMame is required."});
+  }
+
+  try{
+    const result=await pool.query(
+      `UPDATE users
+      SET name =$1
+      WHERE id= $2
+      RETURNING id,name,email,account_type`,
+      [name,req.user.id]
+    );
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: result.rows[0],
+    });
+  }
+  catch(err){
+    console.error('Update profile error: ',err);
+    res.status(500).json({ error: 'Server error.'});
+  }
+};
+
+module.exports = { register, login, getProfile ,changePassword, updateProfile };
