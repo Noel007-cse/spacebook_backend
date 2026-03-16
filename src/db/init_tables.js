@@ -50,6 +50,7 @@ async function initTables() {
   const favoritesTable = `
     CREATE TABLE IF NOT EXISTS favorites (
       id SERIAL PRIMARY KEY,
+      user_id INT REFERENCES users(id),
       space_id INTEGER UNIQUE NOT NULL,
       created_at TIMESTAMP DEFAULT NOW(),
       FOREIGN KEY (space_id) REFERENCES spaces(id) ON DELETE CASCADE
@@ -58,10 +59,11 @@ async function initTables() {
 
   const recommendationsTable = `
     CREATE TABLE IF NOT EXISTS recommendations (
-      id SERIAL PRIMARY KEY,
-      space_id INTEGER UNIQUE NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW(),
-      FOREIGN KEY (space_id) REFERENCES spaces(id) ON DELETE CASCADE
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    space_id INT REFERENCES spaces(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, space_id)
     );
   `;
 
