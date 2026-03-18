@@ -272,19 +272,19 @@ async function seedSpaces() {
     }
 
     const recommended = [
-      {space_id:1},
-      {space_id:6},
-      {space_id:10}
+      {space_id:1, user_id: defaultUserId},
+      {space_id:6, user_id: defaultUserId},
+      {space_id:10, user_id: defaultUserId}
     ];
 
     for (const r of recommended) {
       await pool.query(
         `
-        INSERT INTO recommendations (space_id)
-        VALUES ($1)
-        ON CONFLICT DO NOTHING
+        INSERT INTO recommendations (user_id, space_id)
+        VALUES ($1, $2)
+        ON CONFLICT (user_id, space_id) DO NOTHING
         `,
-        [r.space_id]
+        [r.user_id, r.space_id]
       );
     }
 
