@@ -10,7 +10,7 @@ const {
 } = require('../controllers/spaces.controller');
 const verifyToken = require('../middleware/auth.middleware');
 
-router.get('/',           getAllSpaces);
+router.get('/',           verifyToken, getAllSpaces);
 router.get('/mine',       verifyToken, getMySpaces);
 router.get('/:id',        getSpaceById);
 router.post('/',          verifyToken, createSpace);

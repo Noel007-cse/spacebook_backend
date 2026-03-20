@@ -5,6 +5,7 @@ const authRoutes    = require('./routes/auth.routes');
 const spacesRoutes  = require('./routes/spaces.routes');
 const bookingRoutes = require('./routes/bookings.routes');
 const recomRoutes   = require('./routes/recom.routes');
+const favoritesRoutes = require('./routes/favorites.routes');
 
 const app = express();
 
@@ -19,5 +20,6 @@ app.use('/api/auth',     authRoutes);
 app.use('/api/spaces',   spacesRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/recom',    recomRoutes);
+app.use('/api/favorites', favoritesRoutes);
 
 module.exports = app;
