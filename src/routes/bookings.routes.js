@@ -4,13 +4,15 @@ const {
   createBooking,
   getUserBookings,
   cancelBooking,
-  getBookingsForMySpaces, 
+  getOtherUsersBookings,
+  toggleConfirmBooking,
 } = require('../controllers/bookings.controller');
 const verifyToken = require('../middleware/auth.middleware');
 
-router.post('/',           verifyToken, createBooking);
-router.get('/mine',        verifyToken, getUserBookings);
-router.put('/:id/cancel',  verifyToken, cancelBooking);
-router.get('/for-my-spaces', verifyToken, getBookingsForMySpaces);
+router.post('/',                    verifyToken, createBooking);
+router.get('/mine',                 verifyToken, getUserBookings);
+router.put('/:id/cancel',           verifyToken, cancelBooking);
+router.get('/my-spaces',            verifyToken, getOtherUsersBookings);
+router.patch('/:id/confirm-toggle', verifyToken, toggleConfirmBooking);
 
 module.exports = router;

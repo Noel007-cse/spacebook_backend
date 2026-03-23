@@ -44,6 +44,7 @@ const getUserBookings = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
+    console.error('getUserBooking error:', err.message);
     res.status(500).json({ error: 'Server error.' });
   }
 };
@@ -66,16 +67,15 @@ const cancelBooking = async (req, res) => {
     res.status(500).json({ error: 'Server error.' });
   }
 };
-const getBookingsForMySpaces = async (req, res) => {
+
+const getOtherUsersBookings = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT b.id, b.booking_date, b.time_slot, b.status, b.total_price,
-              s.title AS space_title, s.id AS space_id,
-              u.name AS user_name, u.email AS user_email
+      `SELECT b.*, s.title, s.area, s.image_url, u.name AS booker_name, u.email AS booker_email
        FROM bookings b
        JOIN spaces s ON b.space_id = s.id
-       JOIN users u ON b.user_id = u.id
-       WHERE s.owner_id = $1
+       JOIN users  u ON b.user_id  = u.id
+       WHERE s.owner_id = $1 and b.status != 'CANCELLED'
        ORDER BY b.created_at DESC`,
       [req.user.id]
     );
@@ -86,4 +86,42 @@ const getBookingsForMySpaces = async (req, res) => {
   }
 };
 
-module.exports = { createBooking, getUserBookings, cancelBooking,getBookingsForMySpaces  };
+const toggleConfirmBooking = async (req, res) => {
+  try {
+    const check = await pool.query(
+      `SELECT b.id, b.status, b.is_confirmed, s.owner_id
+       FROM bookings b
+       JOIN spaces s ON b.space_id = s.id
+       WHERE b.id = $1`,
+      [req.params.id]
+    );
+
+    if (check.rows.length === 0)
+      return res.status(404).json({ error: 'Booking not found.' });
+
+    if (check.rows[0].owner_id !== req.user.id)
+      return res.status(403).json({ error: 'Not your space.' });
+
+    if (check.rows[0].status === 'CANCELLED')
+      return res.status(400).json({ error: 'Cannot confirm a cancelled booking.' });
+
+    const result = await pool.query(
+      `UPDATE bookings
+       SET is_confirmed = NOT is_confirmed
+       WHERE id = $1
+       RETURNING *`,
+      [req.params.id]
+    );
+    
+    const updated = result.rows[0];
+    res.json({
+      ...updated,
+      message: updated.is_confirmed ? 'Booking confirmed.' : 'Booking unconfirmed.'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+module.exports = { createBooking, getUserBookings, cancelBooking, getOtherUsersBookings, toggleConfirmBooking };

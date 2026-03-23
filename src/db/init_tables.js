@@ -40,7 +40,8 @@ async function initTables() {
       space_id INT REFERENCES spaces(id),
       booking_date DATE NOT NULL,
       time_slot VARCHAR(30),
-      status VARCHAR(20) DEFAULT 'CONFIRMED',
+      status VARCHAR(20) DEFAULT 'FUNCTIONAL',
+      is_confirmed BOOLEAN DEFAULT FALSE,
       total_price INT,
       created_at TIMESTAMP DEFAULT NOW()
     );
