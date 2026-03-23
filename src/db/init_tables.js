@@ -27,7 +27,6 @@ async function initTables() {
       rating DOUBLE PRECISION DEFAULT 0,
       no_of_rating DOUBLE PRECISION DEFAULT 0,
       image_url TEXT,
-      is_favorite BOOLEAN DEFAULT FALSE,
       has_seats BOOLEAN DEFAULT FALSE,
       is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT NOW()
@@ -48,12 +47,12 @@ async function initTables() {
   `;
 
   const favoritesTable = `
-    CREATE TABLE IF NOT EXISTS favorites (
+      CREATE TABLE IF NOT EXISTS favorites (
       id SERIAL PRIMARY KEY,
-      user_id INT REFERENCES users(id),
-      space_id INTEGER UNIQUE NOT NULL,
+      user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      space_id INT REFERENCES spaces(id) ON DELETE CASCADE,
       created_at TIMESTAMP DEFAULT NOW(),
-      FOREIGN KEY (space_id) REFERENCES spaces(id) ON DELETE CASCADE
+      UNIQUE(user_id, space_id)
     );
   `;
 

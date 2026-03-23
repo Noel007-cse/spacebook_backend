@@ -24,7 +24,7 @@ async function seedSpaces() {
     const spaces = [
       {
         title:"Olympic Green Arena",
-        category:"Sports Turf",
+        category:"Sports Turfs",
         area:"Sports District, Playville",
         description:"Modern synthetic turfs designed for football and cricket with floodlights and secure fencing.",
         distance:"0.5",
@@ -37,7 +37,7 @@ async function seedSpaces() {
       },
       {
         title:"Stellar Multi-Sports Park",
-        category:"Sports Turf",
+        category:"Sports Turfs",
         area:"Sports District, Playville",
         description:"Multi-purpose sports facility with multiple courts and fields.",
         distance:"1.2",
@@ -50,7 +50,7 @@ async function seedSpaces() {
       },
       {
         title:"Champion's Court Indoor",
-        category:"Sports Turf",
+        category:"Sports Turfs",
         area:"Playville Suburbs",
         description:"Indoor court with premium flooring and climate control.",
         distance:"2.4",
@@ -63,7 +63,7 @@ async function seedSpaces() {
       },
       {
         title: 'Green Kick Football Arena',
-        category: 'Sports Turf',
+        category: 'Sports Turfs',
         distance: '3.1',
         area: 'Playville Suburbs',
         description: 'Well-maintained football arena with proper lighting and secure fencing.',
@@ -76,7 +76,7 @@ async function seedSpaces() {
       },
       {
         title: 'Elite Sports Ground',
-        category: 'Sports Turf',
+        category: 'Sports Turfs',
         distance: '4.0',
         area: 'Playville Suburbs',
         description: 'Premium sports ground with excellent facilities and maintenance.',
@@ -89,7 +89,7 @@ async function seedSpaces() {
       },
       {
         title:"City Central Library",
-        category:"Library",
+        category:"Libraries",
         area:"Central Business District, Education City",
         description:"Spacious and quiet library with modern amenities and study rooms.",
         distance:"0.3",
@@ -102,7 +102,7 @@ async function seedSpaces() {
       },
       {
         title:"Knowledge Oasis Study Hall",
-        category:"Library",
+        category:"Libraries",
         area:"Education City",
         description:"Modern study hall with comfortable seating and high-speed internet.",
         distance:"0.9",
@@ -115,7 +115,7 @@ async function seedSpaces() {
       },
       {
         title: 'The Reading Room',
-        category: 'Library',
+        category: 'Libraries',
         distance: '1.5',
         area: 'Education City',
         description: 'Cozy and quiet reading room with a vast collection of books and comfortable seating.',
@@ -128,7 +128,7 @@ async function seedSpaces() {
       },
       {
         title:"Focus Study Hub",
-        category:"Study Hall",
+        category:"Study Halls",
         area:"Education City",
         description:"Quiet study hub with high-speed Wi-Fi and ergonomic seating.",
         distance:"0.8",
@@ -141,7 +141,7 @@ async function seedSpaces() {
       },
       {
         title: 'Skyline Study Lounge',
-        category: 'Study Hall',
+        category: 'Study Halls',
         distance: '1.2',
         area: 'Education City',
         description: 'Modern study lounge with comfortable seating, high-speed internet, and a relaxing atmosphere.',
@@ -154,7 +154,7 @@ async function seedSpaces() {
       },
       {
         title: 'Quiet Corner Study Space',
-        category: 'Study Hall',
+        category: 'Study Halls',
         distance: '2.0',
         area: 'Education City',
         description: 'Quiet and comfortable study space with minimal distractions.',
@@ -167,7 +167,7 @@ async function seedSpaces() {
       },
       {
         title:"The Grand Ballroom",
-        category:"Event Hall",
+        category:"Event Halls",
         area:"Historic District, Entertainment City",
         description:"Elegant ballroom with high ceilings and premium sound systems.",
         distance:"5.1",
@@ -180,7 +180,7 @@ async function seedSpaces() {
       },
       {
         title: 'Prestige Event Centre',
-        category: 'Event Hall',
+        category: 'Event Halls',
         distance: '3.4',
         area: 'Entertainment City',
         description: 'Modern event centre with premium facilities and flexible layouts.',
@@ -193,7 +193,7 @@ async function seedSpaces() {
       },
       {
         title: 'Royal Banquet Hall',
-        category: 'Event Hall',
+        category: 'Event Halls',
         distance: '6.2',
         area: 'Entertainment City',
         description: 'Elegant banquet hall with premium facilities and a grand atmosphere.',
@@ -206,7 +206,7 @@ async function seedSpaces() {
       },
       {
         title: 'Premier Arena Soccer Turf',
-        category: 'Sports Turf',
+        category: 'Sports Turfs',
         area: 'Downtown District, Playville',
         description: 'Modern synthetic turfs designed for football and cricket, featuring floodlights, secure fencing, and well-maintained playing surfaces.',
         distance: '2.4',
@@ -219,7 +219,7 @@ async function seedSpaces() {
       },
       {
         title: 'Focus Hub Study Library',
-        category: 'Library',
+        category: 'Libraries',
         area: 'Central Business District, Education City',
         description: 'Spacious and quiet study halls with modern amenities, including high-speed internet, comfortable seating, and private study rooms.',
         distance: '0.8',
@@ -232,7 +232,7 @@ async function seedSpaces() {
       },
       {
         title: 'The Grand Ballroom',
-        category: 'Event Hall',
+        category: 'Event Halls',
         area: 'Historic District, Entertainment City',
         description: 'Elegant ballroom with high ceilings, ornate decorations, and premium sound systems, perfect for grand events and celebrations.',
         distance: '5.1',

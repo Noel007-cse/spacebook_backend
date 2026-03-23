@@ -3,14 +3,14 @@ const pool = require('../db');
 const getAllSpaces = async (req, res) => {
   const { category } = req.query;
   try {
-    let query = 'SELECT * FROM spaces WHERE is_active = true';
-    const params = [];
-    if (category) {
-      params.push(category);
-      query += ` AND category = $${params.length}`;
-    }
-    query += ' ORDER BY rating DESC';
-    const result = await pool.query(query, params);
+    let query = `SELECT s.*, EXISTS (
+                SELECT 1 FROM favorites f
+                WHERE f.user_id = $1 AND f.space_id = s.id
+                ) AS is_favorite 
+	              FROM spaces s WHERE is_active = true
+                AND category = $2
+                ORDER BY rating DESC`;
+    const result = await pool.query(query, [req.user.id, category]);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
