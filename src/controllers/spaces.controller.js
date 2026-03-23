@@ -86,15 +86,24 @@ const updateSpace = async (req, res) => {
 
 const deleteSpace = async (req, res) => {
   try {
-    const check = await pool.query('SELECT owner_id FROM spaces WHERE id = $1', [req.params.id]);
-    if (check.rows.length === 0) return res.status(404).json({ error: 'Not found.' });
-    if (check.rows[0].owner_id !== req.user.id)
-      return res.status(403).json({ error: 'Not your space.' });
-    await pool.query('UPDATE spaces SET is_active = false WHERE id = $1', [req.params.id]);
-    res.json({ message: 'Space deleted.' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error.' });
+    const id = req.params.id;
+
+    console.log("Deleting space ID:", id);
+
+    const result = await pool.query(
+      "DELETE FROM spaces WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Space not found" });
+    }
+
+    res.json({ message: "Space deleted successfully" });
+
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
