@@ -29,6 +29,8 @@ async function initTables() {
       image_url TEXT,
       has_seats BOOLEAN DEFAULT FALSE,
       is_active BOOLEAN DEFAULT TRUE,
+      approval_status VARCHAR(20) DEFAULT 'APPROVED',
+      admin_rejection_reason TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `;
@@ -43,6 +45,7 @@ async function initTables() {
       status VARCHAR(20) DEFAULT 'FUNCTIONAL',
       is_confirmed BOOLEAN DEFAULT FALSE,
       total_price INT,
+      rejection_reason TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `;
@@ -74,8 +77,33 @@ async function initTables() {
     await pool.query(spacesTable);
     console.log("Spaces table initialized");
 
+    // Add approval columns if they don't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE spaces ADD COLUMN IF NOT EXISTS approval_status VARCHAR(20) DEFAULT 'APPROVED';
+    `).catch(() => {});
+    await pool.query(`
+      ALTER TABLE spaces ADD COLUMN IF NOT EXISTS admin_rejection_reason TEXT;
+    `).catch(() => {});
+
+    // Set user-created spaces (non-seed) that defaulted to APPROVED back to PENDING
+    // Seed spaces belong to 'user@spacebook.com' — those stay APPROVED
+    const seedUser = await pool.query("SELECT id FROM users WHERE email='user@spacebook.com'").catch(() => ({ rows: [] }));
+    if (seedUser.rows.length > 0) {
+      await pool.query(`
+        UPDATE spaces SET approval_status = 'PENDING'
+        WHERE owner_id != $1 AND approval_status = 'APPROVED'
+        AND created_at > NOW() - INTERVAL '1 day'
+      `, [seedUser.rows[0].id]).catch(() => {});
+    }
+    console.log("Spaces approval columns initialized");
+
     await pool.query(bookingsTable);
     console.log("Bookings table initialized");
+
+    // Add rejection_reason column if it doesn't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+    `).catch(() => { /* column may already exist */ });
 
     await pool.query(favoritesTable);
     console.log("Favorites table initialized");

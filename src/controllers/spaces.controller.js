@@ -8,6 +8,7 @@ const getAllSpaces = async (req, res) => {
                 WHERE f.user_id = $1 AND f.space_id = s.id
                 ) AS is_favorite 
 	              FROM spaces s WHERE is_active = true
+                AND approval_status = 'APPROVED'
                 AND category = $2
                 ORDER BY rating DESC`;
     const result = await pool.query(query, [req.user.id, category]);
@@ -21,7 +22,7 @@ const getAllSpaces = async (req, res) => {
 const getMySpaces = async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM spaces WHERE owner_id = $1 AND is_active = true ORDER BY created_at DESC',
+      'SELECT * FROM spaces WHERE owner_id = $1 ORDER BY created_at DESC',
       [req.user.id]
     );
     res.json(result.rows);
@@ -53,8 +54,8 @@ const createSpace = async (req, res) => {
   }
   try {
     const result = await pool.query(
-      `INSERT INTO spaces (owner_id, title, category, area, description, price_per_hr, image_url, has_seats)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      `INSERT INTO spaces (owner_id, title, category, area, description, price_per_hr, image_url, has_seats, approval_status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'PENDING') RETURNING *`,
       [req.user.id, title, category, area, description, price_per_hr, image_url || '', has_seats || false]
     );
     res.status(201).json(result.rows[0]);
