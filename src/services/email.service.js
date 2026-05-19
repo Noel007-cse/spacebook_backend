@@ -91,11 +91,12 @@ async function sendBookingConfirmation(toEmail, details) {
   `;
 
   try {
-    const cleanEmail = toEmail.toLowerCase().trim();
+    // Demo mode: Force all emails to go to the verified test email
+    const demoEmail = 'noeljcherian07@gmail.com';
     
     const { data, error } = await resend.emails.send({
       from: 'SpaceBook <onboarding@resend.dev>', // Resend's default free testing domain
-      to: [cleanEmail],
+      to: [demoEmail],
       subject: `Booking Confirmed — ${spaceName} on ${bookingDate}`,
       html: htmlBody,
     });
