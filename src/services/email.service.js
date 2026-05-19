@@ -1,99 +1,10 @@
-const nodemailer = require('nodemailer');
-const dns = require('dns');
+const { Resend } = require('resend');
 
-// Force IPv4 resolution to prevent ENETUNREACH errors on Render with IPv6
-dns.setDefaultResultOrder('ipv4first');
-let transporter = null;
-let senderEmail = null;
+// Initialize Resend with the API key from environment variables
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
- * Initialize the email transporter.
- * 
- * If EMAIL_USER and EMAIL_PASS are set in .env → uses Gmail (real emails).
- * Otherwise → falls back to Ethereal (fake test emails).
- */
-async function initTransporter() {
-  if (transporter) return transporter;
-
-  const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
-
-  // ── Production Mode: Gmail SMTP ──
-  if (emailUser && emailPass) {
-    console.log(`📧 Using Gmail SMTP with: ${emailUser}`);
-
-    // Resolve IPv4 manually because Render's IPv6 networking breaks SMTP
-    const ipv4 = await new Promise((resolve, reject) => {
-      dns.lookup('smtp.gmail.com', { family: 4 }, (err, address) => {
-        if (err) resolve('smtp.gmail.com'); // fallback
-        else resolve(address);
-      });
-    });
-
-    console.log(`📧 Resolved smtp.gmail.com to IPv4: ${ipv4}`);
-
-    transporter = nodemailer.createTransport({
-      host: ipv4,
-      port: 465,
-      secure: true,
-      auth: {
-        user: emailUser,
-        pass: emailPass,
-      },
-      tls: {
-        servername: 'smtp.gmail.com', // required when using IP for host
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-    });
-
-    senderEmail = emailUser;
-
-    // Verify connection works on startup
-    try {
-      await transporter.verify();
-      console.log('📧 Gmail SMTP connection verified successfully!');
-    } catch (verifyErr) {
-      console.error('📧 Gmail SMTP verification FAILED:', verifyErr.message);
-      console.error('   Check that EMAIL_USER and EMAIL_PASS (App Password) are correct.');
-      // Don't null out transporter — let it retry on actual send
-    }
-
-    return transporter;
-  }
-
-  // ── Dev Mode: Ethereal (fake SMTP) ──
-  try {
-    const testAccount = await nodemailer.createTestAccount();
-
-    console.log('📧 No EMAIL_USER/EMAIL_PASS found → using Ethereal (test mode)');
-    console.log(`   User: ${testAccount.user}`);
-    console.log(`   Pass: ${testAccount.pass}`);
-    console.log(`   Web:  https://ethereal.email/login`);
-    console.log('   (Use the above credentials to view sent emails)\n');
-
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-
-    senderEmail = testAccount.user;
-    return transporter;
-  } catch (err) {
-    console.error('Failed to create email transporter:', err);
-    return null;
-  }
-}
-
-/**
- * Send a booking confirmation email.
+ * Send a booking confirmation email using Resend HTTP API.
  * @param {string} toEmail - Recipient email address
  * @param {object} details - Booking details
  * @param {string} details.spaceName - Name of the booked space
@@ -102,9 +13,8 @@ async function initTransporter() {
  * @param {number} details.totalPrice - Total price for the booking
  */
 async function sendBookingConfirmation(toEmail, details) {
-  const transport = await initTransporter();
-  if (!transport) {
-    console.error('Email transporter not available. Skipping email.');
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not configured. Skipping email.');
     return null;
   }
 
@@ -180,22 +90,20 @@ async function sendBookingConfirmation(toEmail, details) {
   `;
 
   try {
-    const info = await transport.sendMail({
-      from: `"SpaceBook" <${senderEmail}>`,
-      to: toEmail,
+    const { data, error } = await resend.emails.send({
+      from: 'SpaceBook <onboarding@resend.dev>', // Resend's default free testing domain
+      to: [toEmail],
       subject: `Booking Confirmed — ${spaceName} on ${bookingDate}`,
       html: htmlBody,
     });
 
-    // If using Ethereal, show preview URL; if Gmail, show messageId
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log(`📧 [Ethereal] Email preview: ${previewUrl}`);
-      return previewUrl;
-    } else {
-      console.log(`📧 [Gmail] Real email sent to ${toEmail} (ID: ${info.messageId})`);
-      return info.messageId;
+    if (error) {
+      console.error('Failed to send booking email via Resend:', error);
+      return null;
     }
+
+    console.log(`📧 [Resend] Real email sent to ${toEmail} (ID: ${data.id})`);
+    return data.id;
   } catch (err) {
     console.error('Failed to send booking email:', err);
     return null;
@@ -204,22 +112,25 @@ async function sendBookingConfirmation(toEmail, details) {
 
 async function testEmailEndpoint(req, res) {
   try {
-    const transport = await initTransporter();
-    if (!transport) {
-      return res.status(500).json({ error: 'Transporter not initialized' });
+    if (!process.env.RESEND_API_KEY) {
+      return res.status(500).json({ error: 'RESEND_API_KEY is not configured' });
     }
 
-    const info = await transport.sendMail({
-      from: `"SpaceBook" <${senderEmail}>`,
-      to: process.env.EMAIL_USER || 'noeljcherian07@gmail.com',
-      subject: "Render Deployment Email Test",
-      text: "Testing email directly from Render API endpoint."
+    const { data, error } = await resend.emails.send({
+      from: 'SpaceBook <onboarding@resend.dev>',
+      to: [process.env.EMAIL_USER || 'noeljcherian07@gmail.com'],
+      subject: "Render Deployment Email Test via Resend",
+      text: "Testing Resend email directly from Render API endpoint. It worked!"
     });
 
-    res.json({ success: true, messageId: info.messageId, mode: process.env.EMAIL_USER ? 'Gmail' : 'Ethereal' });
+    if (error) {
+      return res.status(500).json({ error: error });
+    }
+
+    res.json({ success: true, messageId: data.id, provider: 'Resend' });
   } catch (err) {
     res.status(500).json({ error: err.message, stack: err.stack });
   }
 }
 
-module.exports = { sendBookingConfirmation, initTransporter, testEmailEndpoint };
+module.exports = { sendBookingConfirmation, testEmailEndpoint };
