@@ -1,38 +1,60 @@
 const nodemailer = require('nodemailer');
 
 let transporter = null;
-let etherealAccount = null;
+let senderEmail = null;
 
 /**
- * Initialize the email transporter using Ethereal (fake SMTP for testing).
- * Ethereal captures emails so you can view them in a web UI without sending real mail.
+ * Initialize the email transporter.
+ * 
+ * If EMAIL_USER and EMAIL_PASS are set in .env → uses Gmail (real emails).
+ * Otherwise → falls back to Ethereal (fake test emails).
  */
 async function initTransporter() {
   if (transporter) return transporter;
 
-  try {
-    // Create an Ethereal test account automatically
-    etherealAccount = await nodemailer.createTestAccount();
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
 
-    console.log('📧 Ethereal Email Account Created:');
-    console.log(`   User: ${etherealAccount.user}`);
-    console.log(`   Pass: ${etherealAccount.pass}`);
+  // ── Production Mode: Gmail SMTP ──
+  if (emailUser && emailPass) {
+    console.log(`📧 Using Gmail SMTP with: ${emailUser}`);
+
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    });
+
+    senderEmail = emailUser;
+    return transporter;
+  }
+
+  // ── Dev Mode: Ethereal (fake SMTP) ──
+  try {
+    const testAccount = await nodemailer.createTestAccount();
+
+    console.log('📧 No EMAIL_USER/EMAIL_PASS found → using Ethereal (test mode)');
+    console.log(`   User: ${testAccount.user}`);
+    console.log(`   Pass: ${testAccount.pass}`);
     console.log(`   Web:  https://ethereal.email/login`);
-    console.log('   (Use the above credentials to log in and view sent emails)\n');
+    console.log('   (Use the above credentials to view sent emails)\n');
 
     transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
       secure: false,
       auth: {
-        user: etherealAccount.user,
-        pass: etherealAccount.pass,
+        user: testAccount.user,
+        pass: testAccount.pass,
       },
     });
 
+    senderEmail = testAccount.user;
     return transporter;
   } catch (err) {
-    console.error('Failed to create Ethereal account:', err);
+    console.error('Failed to create email transporter:', err);
     return null;
   }
 }
@@ -126,16 +148,21 @@ async function sendBookingConfirmation(toEmail, details) {
 
   try {
     const info = await transport.sendMail({
-      from: `"SpaceBook" <${etherealAccount.user}>`,
+      from: `"SpaceBook" <${senderEmail}>`,
       to: toEmail,
       subject: `Booking Confirmed — ${spaceName} on ${bookingDate}`,
       html: htmlBody,
     });
 
-    // Get the Ethereal preview URL so you can view the email in a browser
+    // If using Ethereal, show preview URL; if Gmail, show messageId
     const previewUrl = nodemailer.getTestMessageUrl(info);
-    console.log(`📧 Booking email sent! Preview: ${previewUrl}`);
-    return previewUrl;
+    if (previewUrl) {
+      console.log(`📧 [Ethereal] Email preview: ${previewUrl}`);
+      return previewUrl;
+    } else {
+      console.log(`📧 [Gmail] Real email sent to ${toEmail} (ID: ${info.messageId})`);
+      return info.messageId;
+    }
   } catch (err) {
     console.error('Failed to send booking email:', err);
     return null;
