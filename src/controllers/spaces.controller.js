@@ -55,7 +55,7 @@ const createSpace = async (req, res) => {
   try {
     const result = await pool.query(
       `INSERT INTO spaces (owner_id, title, category, area, description, price_per_hr, image_url, has_seats, approval_status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'APPROVED') RETURNING *`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'PENDING') RETURNING *`,
       [req.user.id, title, category, area, description, price_per_hr, image_url || '', has_seats || false]
     );
     res.status(201).json(result.rows[0]);
