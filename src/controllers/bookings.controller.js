@@ -2,28 +2,39 @@ const pool = require('../db');
 const { sendBookingConfirmation } = require('../services/email.service');
 
 const createBooking = async (req, res) => {
-  const { space_id, booking_date, time_slot, total_price, send_notification, notify_email } = req.body;
+  const { space_id, booking_date, time_slot, seat, total_price, send_notification, notify_email } = req.body;
 
   if (!space_id || !booking_date || !time_slot) {
     return res.status(400).json({ error: 'space_id, booking_date and time_slot required.' });
   }
 
   try {
-    const conflict = await pool.query(
-      `SELECT id FROM bookings
-       WHERE space_id=$1 AND booking_date=$2
-         AND time_slot=$3 AND status != 'CANCELLED'`,
-      [space_id, booking_date, time_slot]
-    );
+    // Seat-aware conflict detection: if a seat is specified, only conflict on same seat
+    let conflict;
+    if (seat) {
+      conflict = await pool.query(
+        `SELECT id FROM bookings
+         WHERE space_id=$1 AND booking_date=$2
+           AND time_slot=$3 AND seat=$4 AND status != 'CANCELLED'`,
+        [space_id, booking_date, time_slot, seat]
+      );
+    } else {
+      conflict = await pool.query(
+        `SELECT id FROM bookings
+         WHERE space_id=$1 AND booking_date=$2
+           AND time_slot=$3 AND seat IS NULL AND status != 'CANCELLED'`,
+        [space_id, booking_date, time_slot]
+      );
+    }
 
     if (conflict.rows.length > 0) {
       return res.status(409).json({ error: 'Slot already booked.' });
     }
 
     const result = await pool.query(
-      `INSERT INTO bookings (user_id, space_id, booking_date, time_slot, total_price)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [req.user.id, space_id, booking_date, time_slot, total_price]
+      `INSERT INTO bookings (user_id, space_id, booking_date, time_slot, seat, total_price)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [req.user.id, space_id, booking_date, time_slot, seat || null, total_price]
     );
 
     const booking = result.rows[0];

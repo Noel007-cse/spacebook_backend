@@ -42,6 +42,7 @@ async function initTables() {
       space_id INT REFERENCES spaces(id),
       booking_date DATE NOT NULL,
       time_slot VARCHAR(30),
+      seat VARCHAR(10),
       status VARCHAR(20) DEFAULT 'FUNCTIONAL',
       is_confirmed BOOLEAN DEFAULT FALSE,
       total_price INT,
@@ -115,6 +116,11 @@ async function initTables() {
     // Add rejection_reason column if it doesn't exist (for existing databases)
     await pool.query(`
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+    `).catch(() => { /* column may already exist */ });
+
+    // Add seat column if it doesn't exist (for existing databases)
+    await pool.query(`
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS seat VARCHAR(10);
     `).catch(() => { /* column may already exist */ });
 
     await pool.query(favoritesTable);
