@@ -20,14 +20,33 @@ async function initTransporter() {
     console.log(`📧 Using Gmail SMTP with: ${emailUser}`);
 
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
         user: emailUser,
         pass: emailPass,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     senderEmail = emailUser;
+
+    // Verify connection works on startup
+    try {
+      await transporter.verify();
+      console.log('📧 Gmail SMTP connection verified successfully!');
+    } catch (verifyErr) {
+      console.error('📧 Gmail SMTP verification FAILED:', verifyErr.message);
+      console.error('   Check that EMAIL_USER and EMAIL_PASS (App Password) are correct.');
+      // Don't null out transporter — let it retry on actual send
+    }
+
     return transporter;
   }
 
