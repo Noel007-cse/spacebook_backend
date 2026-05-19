@@ -188,4 +188,24 @@ async function sendBookingConfirmation(toEmail, details) {
   }
 }
 
-module.exports = { sendBookingConfirmation, initTransporter };
+async function testEmailEndpoint(req, res) {
+  try {
+    const transport = await initTransporter();
+    if (!transport) {
+      return res.status(500).json({ error: 'Transporter not initialized' });
+    }
+
+    const info = await transport.sendMail({
+      from: `"SpaceBook" <${senderEmail}>`,
+      to: process.env.EMAIL_USER || 'noeljcherian07@gmail.com',
+      subject: "Render Deployment Email Test",
+      text: "Testing email directly from Render API endpoint."
+    });
+
+    res.json({ success: true, messageId: info.messageId, mode: process.env.EMAIL_USER ? 'Gmail' : 'Ethereal' });
+  } catch (err) {
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
+}
+
+module.exports = { sendBookingConfirmation, initTransporter, testEmailEndpoint };
