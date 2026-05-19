@@ -1,7 +1,8 @@
 const { Resend } = require('resend');
 
-// Initialize Resend with the API key from environment variables
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend with the API key from environment variables.
+// If missing, pass a dummy key so the server doesn't crash on startup.
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummykey');
 
 /**
  * Send a booking confirmation email using Resend HTTP API.
