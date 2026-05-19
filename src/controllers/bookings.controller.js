@@ -27,28 +27,6 @@ const createBooking = async (req, res) => {
     );
 
     const booking = result.rows[0];
-
-    // Fire-and-forget email notification
-    if (send_notification && notify_email) {
-      // Fetch the space name for the email
-      pool.query('SELECT title FROM spaces WHERE id = $1', [space_id])
-        .then(spaceResult => {
-          const spaceName = spaceResult.rows[0]?.title || 'Unknown Space';
-          return sendBookingConfirmation(notify_email, {
-            spaceName,
-            bookingDate: booking_date,
-            timeSlot: time_slot,
-            totalPrice: total_price || 0,
-          });
-        })
-        .then(previewUrl => {
-          if (previewUrl) {
-            console.log(`📧 Email preview for booking #${booking.id}: ${previewUrl}`);
-          }
-        })
-        .catch(err => console.error('Email notification error:', err));
-    }
-
     res.status(201).json(booking);
   } catch (err) {
     console.error(err);
@@ -114,9 +92,11 @@ const getOtherUsersBookings = async (req, res) => {
 const toggleConfirmBooking = async (req, res) => {
   try {
     const check = await pool.query(
-      `SELECT b.id, b.status, b.is_confirmed, s.owner_id
+      `SELECT b.id, b.status, b.is_confirmed, b.booking_date, b.time_slot, b.total_price, 
+              s.owner_id, s.title AS space_name, u.email AS booker_email
        FROM bookings b
        JOIN spaces s ON b.space_id = s.id
+       JOIN users u ON b.user_id = u.id
        WHERE b.id = $1`,
       [req.params.id]
     );
@@ -124,10 +104,12 @@ const toggleConfirmBooking = async (req, res) => {
     if (check.rows.length === 0)
       return res.status(404).json({ error: 'Booking not found.' });
 
-    if (check.rows[0].owner_id !== req.user.id)
+    const bookingDetails = check.rows[0];
+
+    if (bookingDetails.owner_id !== req.user.id)
       return res.status(403).json({ error: 'Not your space.' });
 
-    if (check.rows[0].status === 'CANCELLED')
+    if (bookingDetails.status === 'CANCELLED')
       return res.status(400).json({ error: 'Cannot confirm a cancelled booking.' });
 
     const result = await pool.query(
@@ -139,6 +121,17 @@ const toggleConfirmBooking = async (req, res) => {
     );
     
     const updated = result.rows[0];
+
+    // If the booking just became confirmed, send an email to the booker
+    if (updated.is_confirmed && bookingDetails.booker_email) {
+      sendBookingConfirmation(bookingDetails.booker_email, {
+        spaceName: bookingDetails.space_name,
+        bookingDate: updated.booking_date,
+        timeSlot: updated.time_slot,
+        totalPrice: updated.total_price || 0,
+      }).catch(err => console.error('Email notification error:', err));
+    }
+
     res.json({
       ...updated,
       message: updated.is_confirmed ? 'Booking confirmed.' : 'Booking unconfirmed.'
