@@ -22,8 +22,18 @@ async function initTransporter() {
   if (emailUser && emailPass) {
     console.log(`📧 Using Gmail SMTP with: ${emailUser}`);
 
+    // Resolve IPv4 manually because Render's IPv6 networking breaks SMTP
+    const ipv4 = await new Promise((resolve, reject) => {
+      dns.lookup('smtp.gmail.com', { family: 4 }, (err, address) => {
+        if (err) resolve('smtp.gmail.com'); // fallback
+        else resolve(address);
+      });
+    });
+
+    console.log(`📧 Resolved smtp.gmail.com to IPv4: ${ipv4}`);
+
     transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
+      host: ipv4,
       port: 465,
       secure: true,
       auth: {
@@ -31,6 +41,7 @@ async function initTransporter() {
         pass: emailPass,
       },
       tls: {
+        servername: 'smtp.gmail.com', // required when using IP for host
         rejectUnauthorized: false,
       },
       connectionTimeout: 10000,
