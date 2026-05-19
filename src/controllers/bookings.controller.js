@@ -124,9 +124,12 @@ const toggleConfirmBooking = async (req, res) => {
 
     // If the booking just became confirmed, send an email to the booker
     if (updated.is_confirmed && bookingDetails.booker_email) {
+      // Format the Postgres Date object to a clean string (YYYY-MM-DD)
+      const formattedDate = new Date(updated.booking_date).toISOString().split('T')[0];
+      
       sendBookingConfirmation(bookingDetails.booker_email, {
         spaceName: bookingDetails.space_name,
-        bookingDate: updated.booking_date,
+        bookingDate: formattedDate,
         timeSlot: updated.time_slot,
         totalPrice: updated.total_price || 0,
       }).catch(err => console.error('Email notification error:', err));
