@@ -70,6 +70,18 @@ async function initTables() {
     );
   `;
 
+  const ratingsTable = `
+    CREATE TABLE IF NOT EXISTS ratings (
+      id SERIAL PRIMARY KEY,
+      user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      space_id INT REFERENCES spaces(id) ON DELETE CASCADE,
+      score INT NOT NULL CHECK (score >= 1 AND score <= 5),
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(user_id, space_id)
+    );
+  `;
+
+
   try {
     await pool.query(usersTable);
     console.log("Users table initialized");
@@ -110,6 +122,9 @@ async function initTables() {
 
     await pool.query(recommendationsTable);
     console.log("Recommendations table initialized");
+
+    await pool.query(ratingsTable);
+    console.log("Ratings table initialized");
 
   } catch (err) {
     console.error("Error initializing tables:", err);

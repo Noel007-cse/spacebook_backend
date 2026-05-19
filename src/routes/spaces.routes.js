@@ -7,6 +7,7 @@ const {
   createSpace,
   updateSpace,
   deleteSpace,
+  rateSpace,
 } = require('../controllers/spaces.controller');
 const verifyToken = require('../middleware/auth.middleware');
 
@@ -16,5 +17,6 @@ router.get('/:id',        getSpaceById);
 router.post('/',          verifyToken, createSpace);
 router.put('/:id',        verifyToken, updateSpace);
 router.delete('/:id',     verifyToken, deleteSpace);
+router.post('/:id/rate',  verifyToken, rateSpace);
 
 module.exports = router;
