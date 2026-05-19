@@ -1,7 +1,8 @@
 const pool = require('../db');
+const { sendBookingConfirmation } = require('../services/email.service');
 
 const createBooking = async (req, res) => {
-  const { space_id, booking_date, time_slot, total_price } = req.body;
+  const { space_id, booking_date, time_slot, total_price, send_notification, notify_email } = req.body;
 
   if (!space_id || !booking_date || !time_slot) {
     return res.status(400).json({ error: 'space_id, booking_date and time_slot required.' });
@@ -24,7 +25,31 @@ const createBooking = async (req, res) => {
        VALUES ($1,$2,$3,$4,$5) RETURNING *`,
       [req.user.id, space_id, booking_date, time_slot, total_price]
     );
-    res.status(201).json(result.rows[0]);
+
+    const booking = result.rows[0];
+
+    // Fire-and-forget email notification
+    if (send_notification && notify_email) {
+      // Fetch the space name for the email
+      pool.query('SELECT title FROM spaces WHERE id = $1', [space_id])
+        .then(spaceResult => {
+          const spaceName = spaceResult.rows[0]?.title || 'Unknown Space';
+          return sendBookingConfirmation(notify_email, {
+            spaceName,
+            bookingDate: booking_date,
+            timeSlot: time_slot,
+            totalPrice: total_price || 0,
+          });
+        })
+        .then(previewUrl => {
+          if (previewUrl) {
+            console.log(`📧 Email preview for booking #${booking.id}: ${previewUrl}`);
+          }
+        })
+        .catch(err => console.error('Email notification error:', err));
+    }
+
+    res.status(201).json(booking);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error.' });
