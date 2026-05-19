@@ -91,9 +91,16 @@ async function sendBookingConfirmation(toEmail, details) {
   `;
 
   try {
+    // ⚠️ HACKATHON WORKAROUND:
+    // Resend's free tier completely blocks sending emails to any address
+    // other than the one you registered with (noeljcherian07@gmail.com).
+    // To ensure the presentation works and doesn't crash, we force all
+    // emails to route to your registered email for the demo!
+    const recipientEmail = 'noeljcherian07@gmail.com'; 
+
     const { data, error } = await resend.emails.send({
       from: 'SpaceBook <onboarding@resend.dev>', // Resend's default free testing domain
-      to: [toEmail],
+      to: [recipientEmail],
       subject: `Booking Confirmed — ${spaceName} on ${bookingDate}`,
       html: htmlBody,
     });
